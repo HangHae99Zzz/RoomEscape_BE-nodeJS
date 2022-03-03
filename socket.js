@@ -1,14 +1,17 @@
 const app = require("./app");
+const https = require("https")
+const fs = require("fs")
 
-// const options = {
-//   letsencrypt로 받은 인증서 경로를 입력
-// };
+var privateKey = fs.readFileSync("/etc/letsencrypt/live/banwonjae.shop/privkey.pem")
+var certificate = fs.readFileSync("/etc/letsencrypt/live/banwonjae.shop/cert.pem")
+var ca = fs.readFileSync("/etc/letsencrypt/live/banwonjae.shop/chain.pem")
+const credentials = { key: privateKey, cert: certificate, ca: ca }
 
-const server = require("http").createServer(app);
+// const server = require("http").createServer(app);
 
 // https 실제 배포 시 연결
-// const https = require("https").createServer(options, app);
-
+const server = https.createServer(credentials, app).listen(3000)
+https.createServer(credentials, app).listen(3000)
 // https 설정 시
 // const io = require("socket.io")(https, {
 const io = require("socket.io")(server, {
@@ -41,5 +44,5 @@ io.on("connection", (socket) => {
 });
 
 // https 연결 시
-// module.exports = { server, https };
-module.exports = { server };
+module.exports = { server, https };
+// module.exports = { server };
