@@ -2,19 +2,19 @@ const app = require("./app");
 const https = require("https")
 const fs = require("fs")
 
-var privateKey = fs.readFileSync("/etc/letsencrypt/live/banwonjae.shop/privkey.pem")
-var certificate = fs.readFileSync("/etc/letsencrypt/live/banwonjae.shop/cert.pem")
-var ca = fs.readFileSync("/etc/letsencrypt/live/banwonjae.shop/chain.pem")
+var privateKey = fs.readFileSync("/etc/letsencrypt/live/roomescape57.shop/privkey.pem")
+var certificate = fs.readFileSync("/etc/letsencrypt/live/roomescape57.shop/cert.pem")
+var ca = fs.readFileSync("/etc/letsencrypt/live/roomescape57.shop/chain.pem")
 const credentials = { key: privateKey, cert: certificate, ca: ca }
 
 // const server = require("http").createServer(app);
 
 // https 실제 배포 시 연결
-const server = https.createServer(credentials, app).listen(3000)
+// const server = https.createServer(credentials, app).listen(3000)
 https.createServer(credentials, app).listen(3000)
 // https 설정 시
-// const io = require("socket.io")(https, {
-const io = require("socket.io")(server, {
+const io = require("socket.io")(https, {
+// const io = require("socket.io")(server, {
   cors: {
     origin: "*",
     credentials: true,
@@ -43,6 +43,12 @@ io.on("connection", (socket) => {
   });
 });
 
+// https.listen(443, () => {
+//   console.log("htts server on 443");
+// });
+// server.listen(3000, () => {
+//   console.log("http server on 3000");
+// });
 // https 연결 시
-module.exports = { server, https };
+// module.exports = { server, https };
 // module.exports = { server };
