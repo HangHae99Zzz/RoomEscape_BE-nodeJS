@@ -1,10 +1,152 @@
-// const { server, https } = require("./socket");
-// const { server } = require("./socket");
-// // 실제 배포 시 https 설정 필요
-// https.listen(443, () => {
-//   console.log("htts server on 443");
-// });
+const app = require("./app");
+const https = require("https")
+const fs = require("fs");
 
-// // server.listen(3000, () => {
-// //   console.log("http server on 3000");
-// // });
+var privateKey = fs.readFileSync("/etc/letsencrypt/live/roomescape57.shop/privkey.pem")
+var certificate = fs.readFileSync("/etc/letsencrypt/live/roomescape57.shop/cert.pem")
+var ca = fs.readFileSync("/etc/letsencrypt/live/roomescape57.shop/chain.pem")
+const credentials = { key: privateKey, cert: certificate, ca: ca }
+
+const config = require('./config/config.json');
+const mysql = require('mysql2');
+
+const connection = mysql.createConnection({
+  host : config.development.host,
+  user : config.development.username,
+  password : config.development.password,
+  database : config.development.database
+});
+
+const server = https.createServer(credentials, app).listen(3000)
+
+const io = require("socket.io")(server, {
+  cors: {
+    origin: ["http://localhost:3000", "https://priceless-turing-4f7218.netlify.app/"],
+    credentials: true,
+  },
+});
+
+let users = {};
+let socketToRoom = {};
+const maximum = process.env.MAXIMUM || 4;
+
+io.on('connection', socket => {
+  socket.on('join_room', data => {
+      if (users[data.room]) {
+          const length = users[data.room].length;
+          if (length === maximum) {
+              socket.to(socket.id).emit('room_full');
+              return;
+          }
+          users[data.room].push({id: socket.id, email: data.email});
+      } else {
+          users[data.room] = [{id: socket.id, email: data.email}];
+      }
+      socketToRoom[socket.id] = data.room;
+
+      socket.join(data.room);
+      console.log(`[${socketToRoom[socket.id]}]: ${socket.id} enter`);
+
+      const usersInThisRoom = users[data.room].filter(user => user.id !== socket.id);
+
+      console.log(usersInThisRoom);
+
+      io.sockets.to(socket.id).emit('all_users', usersInThisRoom);
+  });
+
+    socket.on('offer', data => {
+        //console.log(data.sdp);
+        socket.to(data.offerReceiveID).emit('getOffer', {sdp: data.sdp, offerSendID: data.offerSendID, offerSendEmail: data.offerSendEmail});
+    });
+
+    socket.on('answer', data => {
+        //console.log(data.sdp);
+        socket.to(data.answerReceiveID).emit('getAnswer', {sdp: data.sdp, answerSendID: data.answerSendID});
+    });
+
+    socket.on('candidate', data => {
+        //console.log(data.candidate);
+        socket.to(data.candidateReceiveID).emit('getCandidate', {candidate: data.candidate, candidateSendID: data.candidateSendID});
+    })
+
+    socket.on('loading', () => {
+        console.log('loading 시작');
+        const roomID = socketToRoom[socket.id];
+        io.to(roomID).emit('loadingComplete', 'loading complete');
+    })
+
+    socket.on('count', () => {
+        console.log('문제를 맞췄습니다!!')
+        const roomID = socketToRoom[socket.id];
+        io.to(roomID).emit('countPlus', 'count Plus!!!!');
+    })
+
+    socket.on('disconnect', () => {
+        console.log(`[${socketToRoom[socket.id]}]: ${socket.id} exit`);
+        const roomID = socketToRoom[socket.id];
+        let room = users[roomID];
+        if (room) {
+            room = room.filter(user => user.id !== socket.id);
+            users[roomID] = room;
+            // 방에 혼자 있을 때
+            if (room.length === 0) {
+                delete users[roomID];
+                connection.connect(function(err) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        connection.query(`DELETE FROM user WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                            console.log(`delete user in ${roomID} success`);
+                        })
+                        connection.query(`DELETE FROM clue WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                            console.log(`delete clue in ${roomID} success`);
+                        })
+                        connection.query(`DELETE FROM quiz WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                            console.log(`delete quiz in ${roomID} success`);
+                        })
+                        connection.query(`DELETE FROM room WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                            console.log(`delete ${roomID} success`);
+                        })
+                    }
+                });
+            // 방에 여러명 있을 때
+            } else {
+                connection.connect(function(err) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        connection.query(`SELECT created_user FROM room WHERE room_id = ${roomID}`,
+                        function(err, rows, fields) {
+                            const createdUser = rows
+                            console.log(createdUser)
+                            if (!createdUser[0]?.created_user) return;
+                            connection.query(`DELETE FROM user WHERE user_id = '${socket.id}'`, function(err, rows, fields) {
+                                console.log(`delete ${socket.id} success`);
+                            });
+                            console.log(createdUser[0]?.created_user);
+                            if (socket.id === createdUser[0].created_user) {
+                                // let newCreatedUser = "";
+                                console.log('방장 나갔을 때')
+                                connection.query(`Select user_id From user WHERE room_id = ${roomID}`,
+                                function(err, rows, fields) {
+                                    console.log('userList: ', rows)
+                                    let newCreatedUser = rows[0].user_id;
+                                    console.log('새로운 방장 : ', newCreatedUser);
+                                    io.to(roomID).emit('changedUser', {createdUser: newCreatedUser});
+                                    connection.query(`UPDATE room SET created_user = '${newCreatedUser}' WHERE room_id = ${roomID}`,
+                                    function(err, rows, fields) {
+                                    console.log(`createdUser in ${roomID} change success`);
+                                    });
+                                });
+                                
+                            }
+                        })
+                    }
+                })
+            }
+        }
+        socket.to(roomID).emit('user_exit', {id: socket.id});
+        console.log('현재 연결된 모든 user: ', users);    
+    });
+  
+});
