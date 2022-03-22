@@ -101,10 +101,7 @@ io.on('connection', socket => {
                         connection.query(`DELETE FROM clue WHERE room_id = ${roomID}`, function(err, rows, fields) {
                             console.log(`delete clue in ${roomID} success`);
                         })
-                        connection.query(`DELETE FROM quiz WHERE room_id = ${roomID}`, function(err, rows, fields) {
-                            console.log(`delete quiz in ${roomID} success`);
-                        })
-                        connection.query(`DELETE FROM room WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                        connection.query(`UPDATE room SET state = 1 WHERE room_id = ${roomID}`, function(err, rows, fields) {
                             console.log(`delete ${roomID} success`);
                         })
                     }
