@@ -96,13 +96,13 @@ io.on('connection', socket => {
                         throw err;
                     } else {
                         connection.query(`DELETE FROM user WHERE room_id = ${roomID}`, function(err, rows, fields) {
-                            console.log(`delete user in ${roomID} success`);
+                            console.log(`delete user in ${roomID} success!!!!`);
                         })
                         connection.query(`DELETE FROM clue WHERE room_id = ${roomID}`, function(err, rows, fields) {
-                            console.log(`delete clue in ${roomID} success`);
+                            console.log(`delete clue in ${roomID} success!!!!`);
                         })
                         connection.query(`UPDATE room SET state = 1 WHERE room_id = ${roomID}`, function(err, rows, fields) {
-                            console.log(`delete ${roomID} success`);
+                            console.log(`delete ${roomID} success!!!!`);
                         })
                     }
                 });
