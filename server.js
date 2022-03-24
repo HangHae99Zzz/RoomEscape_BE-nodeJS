@@ -96,6 +96,7 @@ io.on('connection', socket => {
             users[roomID] = room;
             // 방에 혼자 있을 때
             if (room.length === 0) {
+                console.log('마지막 유저가 나갑니다.')
                 delete users[roomID];
                 connection.connect(function(err) {
                     if (err) {
@@ -114,6 +115,7 @@ io.on('connection', socket => {
                 });
             // 방에 여러명 있을 때
             } else {
+                console.log('유저 중 한명이 나갑니다.')
                 connection.connect(function(err) {
                     if (err) {
                         throw err;
@@ -128,7 +130,6 @@ io.on('connection', socket => {
                             });
                             console.log(createdUser[0]?.created_user);
                             if (socket.id === createdUser[0].created_user) {
-                                // let newCreatedUser = "";
                                 console.log('방장 나갔을 때')
                                 connection.query(`Select user_id From user WHERE room_id = ${roomID}`,
                                 function(err, rows, fields) {
