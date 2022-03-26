@@ -21,7 +21,7 @@ const server = https.createServer(credentials, app).listen(3000)
 
 const io = require("socket.io")(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://priceless-turing-4f7218.netlify.app/"],
+    origin: ["http://localhost:3000", "https://zzz-escape.netlify.app"],
     credentials: true,
   },
 });
