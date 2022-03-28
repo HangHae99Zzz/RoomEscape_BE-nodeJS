@@ -10,7 +10,6 @@ const credentials = { key: privateKey, cert: certificate, ca: ca }
 const config = require('./config/config.json');
 const mysql = require('mysql2');
 
-const database = config.development.database;
 const connection = mysql.createConnection({
   host : config.development.host,
   user : config.development.username,
@@ -100,13 +99,13 @@ io.on('connection', socket => {
                     if (err) {
                         throw err;
                     } else {
-                        connection.query(`DELETE FROM ${database}.user WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                        connection.query(`DELETE FROM user WHERE room_id = ${roomID}`, function(err, rows, fields) {
                             console.log(`delete user in ${roomID} success`);
                         })
-                        connection.query(`DELETE FROM ${database}.clue WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                        connection.query(`DELETE FROM clue WHERE room_id = ${roomID}`, function(err, rows, fields) {
                             console.log(`delete clue in ${roomID} success`);
                         })
-                        connection.query(`UPDATE ${database}.room SET state = 1 WHERE room_id = ${roomID}`, function(err, rows, fields) {
+                        connection.query(`UPDATE room SET state = 1 WHERE room_id = ${roomID}`, function(err, rows, fields) {
                             console.log(`update ${roomID} success`);
                         })
                     }
@@ -118,9 +117,9 @@ io.on('connection', socket => {
                     if (err) {
                         throw err;
                     } else {
-                        connection.query(`SELECT created_user FROM ${database}.room WHERE room_id = ${roomID}`,
+                        connection.query(`SELECT created_user FROM room WHERE room_id = ${roomID}`,
                         function(err, rows, fields) {
-                            connection.query(`DELETE FROM user WHERE ${database}.user_id = '${socket.id}'`, function(err, rows, fields) {
+                            connection.query(`DELETE FROM user WHERE user_id = '${socket.id}'`, function(err, rows, fields) {
                                 console.log(`delete ${socket.id} success`);
                             });
                             const createdUser = rows
@@ -128,13 +127,13 @@ io.on('connection', socket => {
                             if (!createdUser[0]?.created_user) return;
                             if (socket.id === createdUser[0].created_user) {
                                 console.log('방장 나갔을 때')
-                                connection.query(`Select user_id From ${database}.user WHERE room_id = ${roomID}`,
+                                connection.query(`Select user_id From user WHERE room_id = ${roomID}`,
                                 function(err, rows, fields) {
                                     console.log('userList: ', rows)
                                     let newCreatedUser = rows[0].user_id;
                                     console.log('새로운 방장 : ', newCreatedUser);
                                     io.to(roomID).emit('changedUser', {createdUser: newCreatedUser});
-                                    connection.query(`UPDATE ${database}.room SET created_user = '${newCreatedUser}' WHERE room_id = ${roomID}`,
+                                    connection.query(`UPDATE room SET created_user = '${newCreatedUser}' WHERE room_id = ${roomID}`,
                                     function(err, rows, fields) {
                                     console.log(`createdUser in ${roomID} change success`);
                                     });
