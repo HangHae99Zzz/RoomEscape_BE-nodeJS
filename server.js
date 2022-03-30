@@ -73,14 +73,14 @@ io.on('connection', socket => {
     })
 
     socket.on('count', () => {
-        console.log('문제를 맞췄습니다!!')
         const roomID = socketToRoom[socket.id];
+        console.log(roomID, '에서 문제를 맞췄습니다!!')
         io.to(roomID).emit('countPlus', 'count Plus!!!!');
     })
 
     socket.on('chance', () => {
-        console.log('chance를 사용했습니다!!')
         const roomID = socketToRoom[socket.id];
+        console.log(roomID, '에서 chance를 사용했습니다!!')
         io.to(roomID).emit('chanceMinus', 'countMinus!!!!');
     })
 
