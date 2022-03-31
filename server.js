@@ -132,7 +132,7 @@ io.on('connection', socket => {
                                 function(err, rows, fields) {
                                     console.log('userList: ', rows)
                                     // undefined면 return
-                                    if (!rows[0].user_id) return;
+                                    if (!rows[0]?.user_id) return;
                                     let newCreatedUser = rows[0].user_id;
                                     console.log('새로운 방장 : ', newCreatedUser);
                                     io.to(roomID).emit('changedUser', {createdUser: newCreatedUser});
