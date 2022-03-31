@@ -130,6 +130,7 @@ io.on('connection', socket => {
                                 connection.query(`Select user_id From user WHERE room_id = ${roomID}`,
                                 function(err, rows, fields) {
                                     console.log('userList: ', rows)
+                                    if (!rows[0].user_id) return;
                                     let newCreatedUser = rows[0].user_id;
                                     console.log('새로운 방장 : ', newCreatedUser);
                                     io.to(roomID).emit('changedUser', {createdUser: newCreatedUser});
