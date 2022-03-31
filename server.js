@@ -67,8 +67,8 @@ io.on('connection', socket => {
     })
 
     socket.on('loading', () => {
-        console.log('loading 시작');
         const roomID = socketToRoom[socket.id];
+        console.log(roomID, '에서 game loading을 시작했습니다!!');
         io.to(roomID).emit('loadingComplete', 'loading complete');
     })
 
