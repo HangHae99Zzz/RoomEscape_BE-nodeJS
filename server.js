@@ -72,10 +72,10 @@ io.on('connection', socket => {
         io.to(roomID).emit('loadingComplete', 'loading complete');
     })
 
-    socket.on('count', () => {
+    socket.on('count', data => {
         const roomID = socketToRoom[socket.id];
         console.log(roomID, '에서 문제를 맞췄습니다!!')
-        io.to(roomID).emit('countPlus', 'count Plus!!!!');
+        io.to(roomID).emit('countPlus', data);
     })
 
     socket.on('chance', () => {
@@ -124,12 +124,14 @@ io.on('connection', socket => {
                             });
                             const createdUser = rows
                             console.log(createdUser)
+                            // undefined면 return
                             if (!createdUser[0]?.created_user) return;
                             if (socket.id === createdUser[0].created_user) {
                                 console.log('방장 나갔을 때')
                                 connection.query(`Select user_id From user WHERE room_id = ${roomID}`,
                                 function(err, rows, fields) {
                                     console.log('userList: ', rows)
+                                    // undefined면 return
                                     if (!rows[0].user_id) return;
                                     let newCreatedUser = rows[0].user_id;
                                     console.log('새로운 방장 : ', newCreatedUser);
